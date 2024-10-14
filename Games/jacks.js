@@ -3,7 +3,7 @@ function detectHand(hand) {
     let counts = Array(13).fill(0);
 
     for (let card of hand) {
-        if (!card || card.length < 4) return "Invalid hand";
+        if (!card || card.length > 4) return "Invalid hand";
         let rank = card[3];
         ranks.push(rank);
         counts[rank - 1]++;
@@ -11,38 +11,61 @@ function detectHand(hand) {
 
     counts.sort((a, b) => b - a);
 
+    let sCount = 0
+    let cCount = 0
+    let dCount = 0
+    let hCount = 0;
+    let flush = false
+    let aceBool = false;
 
-    let flush = false;
-    let aceBool = ranks.includes(1);
-    let suitCounts = {};
     for (let card of hand) {
-        let suit = card[1];
-        suitCounts[suit] = (suitCounts[suit] || 0) + 1;
-    }
-    flush = Object.values(suitCounts).some(count => count >= 5);
-
-
-    if (counts[0] === 4) return ["Four of a Kind", 25];
-    if (counts[0] === 3 && counts[1] === 2) return ["Full House", 9];
-    if (counts[0] === 3) return ["Three of a Kind", 3];
-    if (counts[0] === 2 && counts[1] === 2) return ["Two Pair", 2];
-
-    if (counts[0] === 2) {
-        return (counts[1] >= 11) 
-            ? ["One Pair (Jacks or Better)", 1] 
-            : ["One Pair (Lower than Jacks)", 0];
+        if (card[0].includes("1")) {
+            aceBool = true;
+        }
+        if (card[0].includes("S")) {
+            sCount++;
+        } else if (card[0].includes("C")) {
+            cCount++;
+        } else if (card[0].includes("D")) {
+            dCount++;
+        } else if (card[0].includes("H")) {
+            hCount++;
+        }
     }
 
-    ranks.sort((a, b) => a - b);
-    let isStraight = ranks[4] - ranks[0] === 4 && new Set(ranks).size === 5;
+    if (sCount >= 5 || cCount >= 5 || dCount >= 5 || hCount >= 5) {
+        flush = true;
+    }
+        
+    if (JSON.stringify(counts) === JSON.stringify([4, 1])) {
+        return ["Four of a Kind", 25];
+    } else if (JSON.stringify(counts) === JSON.stringify([3, 2])) {
+        return ["Full House", 9];
+    } else if (JSON.stringify(counts) === JSON.stringify([3, 1, 1])) {
+        return ["Three of a Kind", 3];
+    } else if (JSON.stringify(counts) === JSON.stringify([2, 2, 1])) {
+        return ["Two Pair", 2];
+    } else if (JSON.stringify(counts) === JSON.stringify([2, 1, 1, 1])) {
+        for (let rank = 0; rank < counts.length; rank++) {
+            if (counts[rank] === 2) {
+                if (rank + 1 >= 11 || rank + 1 === 1) {
+                    return ["One Pair (Jacks or Better)", 1];
+                } else {
+                    return ["One Pair (Lower than Jacks)", 0];
+                }
+            }
+        }
+    } else if (JSON.stringify(counts) === JSON.stringify([1, 1, 1, 1, 1])) {
+        ranks.sort((a, b) => a - b);
+        if (isConsecutive(ranks) && flush && aceBool) return ["Royal Flush", 800];
+        if (isConsecutive(ranks) && flush) return ["Straight Flush", 50];
+        if (isConsecutive(ranks)) return ["Straight", 4];
+        if (flush) return ["Flush", 6];
+        return ["High Card", 0];
+    }
 
-    if (isStraight && flush && aceBool) return ["Royal Flush", 800];
-    if (isStraight && flush) return ["Straight Flush", 50];
-    if (isStraight) return ["Straight", 4];
-    if (flush) return ["Flush", 6];
-    return ["High Card", 0];
+    return "Invalid hand";
 }
-
 
 
 
@@ -56,62 +79,20 @@ function play() {
         let num = "";
         let integer = 0;
     
-        if (IdentifyCard.includes("S"))
-            suit = "Spades";
-        else if (IdentifyCard.includes("C"))
-            suit = "Clubs";
-        else if (IdentifyCard.includes("D"))
-            suit = "Diamonds";
-        else if (IdentifyCard.includes("H"))
-            suit = "Hearts";
+        if (IdentifyCard.includes("S")) suit = "Spades";
+        else if (IdentifyCard.includes("C")) suit = "Clubs";
+        else if (IdentifyCard.includes("D")) suit = "Diamonds";
+        else if (IdentifyCard.includes("H")) suit = "Hearts";
     
-        if (IdentifyCard.includes("13")) {
-            integer = 13
-            num = "King"
-        } else if (IdentifyCard.includes("12")) {
-            integer = 12
-            num = "Queen"
-        } else if (IdentifyCard.includes("11")) {
-            integer = 11
-            num = "Jack"
-        } else if (IdentifyCard.includes("10")) {
-            integer = 10
-            num = "Ten"
-        } else if (IdentifyCard.includes("9")) {
-            integer = 9
-            num = "Nine"
-        } else if (IdentifyCard.includes("8")) {
-            integer = 8
-            num = "Eight"
-        } else if (IdentifyCard.includes("7")) {
-            integer = 7
-            num = "Seven"
-        } else if (IdentifyCard.includes("6")) {
-            integer = 6
-            num = "Six"
-        } else if (IdentifyCard.includes("5")) {
-            integer = 5
-            num = "Five"
-        } else if (IdentifyCard.includes("4")) {
-            integer = 3
-            num = "Four"
-        } else if (IdentifyCard.includes("3")) {
-            integer = 3
-            num = "Three"
-        } else if (IdentifyCard.includes("2")) {
-            integer = 2
-            num = "Two"
-        } else if (IdentifyCard.includes("1")) {
-            integer = 1
-            num = "Ace"
-        }
+        integer = parseInt(IdentifyCard.replace(/[^\d]/g, ""));
+        num = integer.toString();
     
         return { suit, num, integer };
     }
     
 
     function refreshDeck() {
-        let deck = []
+        let deck = [];
         for (let i = 1; i < 14; i++) {
             deck.push(i + "S", i + "C", i + "D", i + "H");
         }
@@ -120,11 +101,14 @@ function play() {
 
     function replaceCard(hand, index, deck) {
         
-        let chosenCard = deck[Math.floor(Math.random() * deck.length)];
-        let { suit, num, integer } = identify(chosenCard);
+        let randomInt = deck[Math.floor(Math.random() * deck.length)];
+        let { suit, num, integer } = identify(randomInt);
 
-        deck.splice(hand[index], 1, [chosenCard, suit, num, integer]);
+        deck.splice(deck.indexOf(randomInt), 1);
+
+        hand[index] = [randomInt, suit, num, integer];
     }
+
 
     function displayHand(hand) {
         let display_list = [];
@@ -136,29 +120,51 @@ function play() {
                 display_list.push("[Discarded]");
             }
         }
-        let aaaahand = detectHand(Hand1);
-
         
-        alert("- " + display_list.join(", ") + " -");
-        alert(aaaahand)
-    }
+        let detectedHand = detectHand(hand);
 
+        alert("- " + display_list.join(", ") + " -");
+        alert(detectedHand, "ffg");
+    }
 
 
     let deck = refreshDeck();
     let Hand1 = [];
-    let Hand2 = [];
-
+    let Hand2 = ["", "", "", "", ""];
 
     for (let i = 0; i < 5; i++) {
         let randomCard = deck[Math.floor(Math.random() * deck.length)];
         let { suit, num, integer } = identify(randomCard);
+        deck.splice(deck.indexOf(randomCard), 1);
         Hand1.push([randomCard, suit, num, integer]);
     }
-    
-    document.getElementById("hand1").innerHTML = Hand1;
-    window.alert(Hand1[0], " fafghie ", Hand1[1], " fafghie ", Hand1[3], " fafghie ", Hand1[4], " fafghie ")
-    displayHand(Hand1);
 
+    
+
+    let finished = false
+
+
+
+    while (!finished) {
+        displayHand(Hand1);
+        let x = prompt("Choose a card (1-5) or press Cancel to finish:");
+
+        if (x === null || x === "") {
+            finished = true;
+        } else {
+            x = parseInt(x);
+
+            if (x >= 1 && x <= 5) {
+                Hand2[x - 1] = Hand1[x - 1];
+            } else {
+                alert("Invalid input. Enter a number between 1 and 5.");
+            }
+        }
+    }
+    
+    displayHand(Hand2)
+
+    
+    
 
 }

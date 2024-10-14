@@ -11,26 +11,41 @@ function detectHand(hand) {
 
     counts.sort((a, b) => b - a);
 
-    let sCount = 0, cCount = 0, dCount = 0, hCount = 0;
-    let flush = false, aceBool = false;
+    let sCount = 0
+    let cCount = 0
+    let dCount = 0
+    let hCount = 0;
+    let flush = false
+    let aceBool = false;
 
     for (let card of hand) {
-        if (card[0].includes("1")) aceBool = true;
-        if (card[0].includes("S")) sCount++;
-        else if (card[0].includes("C")) cCount++;
-        else if (card[0].includes("D")) dCount++;
-        else if (card[0].includes("H")) hCount++;
+        if (card[0].includes("1")) {
+            aceBool = true;
+        }
+        if (card[0].includes("S")) {
+            sCount++;
+        } else if (card[0].includes("C")) {
+            cCount++;
+        } else if (card[0].includes("D")) {
+            dCount++;
+        } else if (card[0].includes("H")) {
+            hCount++;
+        }
     }
 
-    if (sCount >= 5 || cCount >= 5 || dCount >= 5 || hCount >= 5) flush = true;
-
-    if (JSON.stringify(counts) === JSON.stringify([4, 1])) return ["Four of a Kind", 25];
-    if (JSON.stringify(counts) === JSON.stringify([3, 2])) return ["Full House", 9];
-    if (JSON.stringify(counts) === JSON.stringify([3, 1, 1])) return ["Three of a Kind", 3];
-    if (JSON.stringify(counts) === JSON.stringify([2, 2, 1])) return ["Two Pair", 2];
-    
-    
-    if (JSON.stringify(counts) === JSON.stringify([2, 1, 1, 1])) {
+    if (sCount >= 5 || cCount >= 5 || dCount >= 5 || hCount >= 5) {
+        flush = true;
+    }
+        
+    if (JSON.stringify(counts) === JSON.stringify([4, 1])) {
+        return ["Four of a Kind", 25];
+    } else if (JSON.stringify(counts) === JSON.stringify([3, 2])) {
+        return ["Full House", 9];
+    } else if (JSON.stringify(counts) === JSON.stringify([3, 1, 1])) {
+        return ["Three of a Kind", 3];
+    } else if (JSON.stringify(counts) === JSON.stringify([2, 2, 1])) {
+        return ["Two Pair", 2];
+    } else if (JSON.stringify(counts) === JSON.stringify([2, 1, 1, 1])) {
         for (let rank = 0; rank < counts.length; rank++) {
             if (counts[rank] === 2) {
                 if (rank + 1 >= 11 || rank + 1 === 1) {
@@ -40,9 +55,7 @@ function detectHand(hand) {
                 }
             }
         }
-    }
-
-    if (JSON.stringify(counts) === JSON.stringify([1, 1, 1, 1, 1])) {
+    } else if (JSON.stringify(counts) === JSON.stringify([1, 1, 1, 1, 1])) {
         ranks.sort((a, b) => a - b);
         if (isConsecutive(ranks) && flush && aceBool) return ["Royal Flush", 800];
         if (isConsecutive(ranks) && flush) return ["Straight Flush", 50];
@@ -96,6 +109,7 @@ function play() {
         hand[index] = [randomInt, suit, num, integer];
     }
 
+
     function displayHand(hand) {
         let display_list = [];
 
@@ -106,16 +120,17 @@ function play() {
                 display_list.push("[Discarded]");
             }
         }
-        let aaaahand = detectHand(Hand1);
+        
+        let detectedHand = detectHand(hand);
 
-        alert("- " + display_list.join(", ") + " -");
-        alert(aaaahand)
+        // alert("- " + display_list.join(", ") + " -");
+        // alert(detectedHand, "ffg");
     }
 
 
     let deck = refreshDeck();
     let Hand1 = [];
-    let Hand2 = [];
+    let Hand2 = ["", "", "", "", ""];
 
     for (let i = 0; i < 5; i++) {
         let randomCard = deck[Math.floor(Math.random() * deck.length)];
@@ -124,11 +139,30 @@ function play() {
         Hand1.push([randomCard, suit, num, integer]);
     }
 
-    alert("Hand1:", Hand1);
+    
+
+    let finished = false
 
 
 
-    displayHand(Hand1);
+    while (!finished) {
+        displayHand(Hand1);
+        let x = prompt("Choose a card (1-5) or press Cancel to finish:");
+
+        if (x === null || x === "") {
+            finished = true;
+        } else {
+            x = parseInt(x);
+
+            if (x >= 1 && x <= 5) {
+                Hand2[x - 1] = Hand1[x - 1];
+            } else {
+                // alert("Invalid input. Enter a number between 1 and 5.");
+            }
+        }
+    }
+    
+    displayHand(Hand2)
 
     
     
